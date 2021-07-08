@@ -7,6 +7,15 @@ import (
 	"github.com/atc0005/go-teams-notify/v2"
 )
 
+func GetUnavailableMessage() goteamsnotify.MessageCard {
+	msg := goteamsnotify.NewMessageCard()
+	msg.Title = "今週...ネタ切れです！"
+	msg.Text = "申し訳ございません。。🙇🙇🙇"
+	msg.ThemeColor = "#34D399"
+
+	return msg
+}
+
 func SetupMessage(article *Article) goteamsnotify.MessageCard {
 	msg := goteamsnotify.NewMessageCard()
 	msg.Title = article.Title
