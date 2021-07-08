@@ -173,3 +173,25 @@ func TestFetchArticles(t *testing.T) {
 		}
 	})
 }
+
+func TestPickRandomArticle(t *testing.T) {
+	t.Run("Returns error if array empty", func(t *testing.T) {
+		articles := []Article{}
+
+		_, err := PickRandomArticle(articles)
+
+		if err == nil {
+			t.Errorf("Expected error from PickRandomArticle")
+		}
+	})
+
+	t.Run("Returns a single article", func(t *testing.T) {
+		articles := []Article{{}}
+
+		result, _ := PickRandomArticle(articles)
+
+		if result != &articles[0] {
+			t.Errorf("Returned article does not match expected")
+		}
+	})
+}

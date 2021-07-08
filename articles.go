@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/jomei/notionapi"
@@ -107,4 +109,14 @@ func FetchArticles(
 	}
 
 	return formatArticlesResponse(res), nil
+}
+
+func PickRandomArticle(articles []Article) (*Article, error) {
+	if len(articles) == 0 {
+		return nil, fmt.Errorf("Given array is empty")
+	}
+
+	randIndex := rand.Intn(len(articles))
+
+	return &articles[randIndex], nil
 }

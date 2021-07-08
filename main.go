@@ -24,8 +24,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("FetchArticles() failed with error: %s\n", err)
 	}
+	if len(articles) == 0 {
+		log.Fatalln("No available articles found.")
+	}
+
+	log.Println("Picking random article...")
+	article, err := PickRandomArticle(articles)
+	if err != nil {
+		log.Fatalf("PickRandomArticle() failed with error: %s\n", err)
+	}
 
 	// @TODO debug
-	json, _ := json.MarshalIndent(articles, "", "  ")
+	json, _ := json.MarshalIndent(article, "", "  ")
 	log.Println(string(json))
 }
