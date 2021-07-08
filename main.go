@@ -17,11 +17,11 @@ func main() {
 	}
 
 	log.Println("Fetching articles...")
-
-	articleClient := NewArticleClient()
+	notionClient := NewNotionClient()
+	dbClient := notionClient.Database
 	dbId := GetDatabaseId()
 
-	articles, err := FetchArticles(articleClient, dbId)
+	articles, err := FetchArticles(dbClient, dbId)
 	if err != nil {
 		log.Fatalf("FetchArticles() failed with error: %s\n", err)
 	}
@@ -48,6 +48,14 @@ func main() {
 	err = SendMessage(teamsClient, url, msg)
 	if err != nil {
 		log.Fatalf("SendMessage() failed with error: %s\n", err)
+	}
+
+	log.Println("Marking article as read...")
+	pgClient := notionClient.Page
+	pubdCheckboxId := GetPublishedCheckboxId()
+	err = MarkArticleRead(pgClient, pubdCheckboxId, article)
+	if err != nil {
+		log.Fatalf("MarkArticleRead() failed with error: %s\n", err)
 	}
 
 	log.Println("Success!")

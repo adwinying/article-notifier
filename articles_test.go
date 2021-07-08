@@ -9,6 +9,16 @@ import (
 	"github.com/jomei/notionapi"
 )
 
+func newMockArticle() Article {
+	return Article{
+		ID:        "some_id",
+		URL:       "some_url",
+		Title:     "some_title",
+		Excerpt:   "some_excerpt",
+		Published: true,
+	}
+}
+
 type ArticleDatabaseServiceMock struct {
 	notionapi.DatabaseService
 }
@@ -59,14 +69,7 @@ func TestFormatArticlesResponse(t *testing.T) {
 			},
 		}
 
-		expected := Article{
-			ID:        "some_id",
-			URL:       "some_url",
-			Title:     "some_title",
-			Excerpt:   "some_excerpt",
-			Published: true,
-		}
-
+		expected := newMockArticle()
 		result := formatArticlesResponse(articles)
 
 		if len(result) != 1 {
@@ -79,7 +82,7 @@ func TestFormatArticlesResponse(t *testing.T) {
 	})
 }
 
-type articleClientMock struct {
+type dbClientMock struct {
 	queryMock func(
 		context.Context,
 		notionapi.DatabaseID,
@@ -87,7 +90,7 @@ type articleClientMock struct {
 	) (*notionapi.DatabaseQueryResponse, error)
 }
 
-func (m articleClientMock) Query(
+func (m dbClientMock) Query(
 	ctx context.Context,
 	dbId notionapi.DatabaseID,
 	req *notionapi.DatabaseQueryRequest,
@@ -123,8 +126,8 @@ func TestFetchArticles(t *testing.T) {
 			},
 		}
 
-		articleMock := articleClientMock{
-			func(
+		clientMock := dbClientMock{
+			queryMock: func(
 				ctx context.Context,
 				dbId notionapi.DatabaseID,
 				req *notionapi.DatabaseQueryRequest,
@@ -149,15 +152,15 @@ func TestFetchArticles(t *testing.T) {
 			},
 		}
 
-		FetchArticles(articleMock, expectedDbId)
+		FetchArticles(clientMock, expectedDbId)
 	})
 
 	t.Run("Returns error from dbClient", func(t *testing.T) {
 		dbId := notionapi.DatabaseID("some_db_id")
 		expected := fmt.Errorf("")
 
-		articleMock := articleClientMock{
-			func(
+		clientMock := dbClientMock{
+			queryMock: func(
 				ctx context.Context,
 				dbId notionapi.DatabaseID,
 				req *notionapi.DatabaseQueryRequest,
@@ -166,7 +169,7 @@ func TestFetchArticles(t *testing.T) {
 			},
 		}
 
-		_, result := FetchArticles(articleMock, dbId)
+		_, result := FetchArticles(clientMock, dbId)
 
 		if result != expected {
 			t.Errorf("Error from dbClient is not returned:\n%#v\n", result)
@@ -193,5 +196,79 @@ func TestPickRandomArticle(t *testing.T) {
 		if result != &articles[0] {
 			t.Errorf("Returned article does not match expected")
 		}
+	})
+}
+
+type pgClientMock struct {
+	updateMock func(
+		context.Context,
+		notionapi.PageID,
+		*notionapi.PageUpdateRequest,
+	) (*notionapi.Page, error)
+}
+
+func (m pgClientMock) Update(
+	ctx context.Context,
+	pgId notionapi.PageID,
+	req *notionapi.PageUpdateRequest,
+) (*notionapi.Page, error) {
+	return m.updateMock(ctx, pgId, req)
+}
+
+func TestMarkArticleRead(t *testing.T) {
+	t.Run("Check input params", func(t *testing.T) {
+		pubId := notionapi.ObjectID("some_pub_id")
+		expectedArticle := newMockArticle()
+		expectedCtx := context.Background()
+		expectedReq := notionapi.PageUpdateRequest{
+			Properties: notionapi.Properties{
+				"Published": notionapi.CheckboxProperty{
+					ID:       pubId,
+					Checkbox: true,
+				},
+			},
+		}
+
+		clientMock := pgClientMock{
+			updateMock: func(
+				ctx context.Context,
+				pgId notionapi.PageID,
+				req *notionapi.PageUpdateRequest,
+			) (*notionapi.Page, error) {
+				if !reflect.DeepEqual(ctx, expectedCtx) {
+					t.Errorf("ctx does not match expected:\n%#v\n", ctx)
+				}
+
+				if !reflect.DeepEqual(pgId.String(), expectedArticle.ID.String()) {
+					t.Errorf("pgId does not match expected:\n%#v\n", pgId)
+				}
+
+				if !reflect.DeepEqual(*req, expectedReq) {
+					t.Errorf("req does not match expected:\n%#v\n", req)
+				}
+
+				return &notionapi.Page{}, nil
+			},
+		}
+
+		MarkArticleRead(clientMock, pubId, &expectedArticle)
+	})
+
+	t.Run("Returns err if occured", func(t *testing.T) {
+		err := fmt.Errorf("some err")
+		pubId := notionapi.ObjectID("some_pub_id")
+		article := newMockArticle()
+
+		clientMock := pgClientMock{
+			updateMock: func(
+				ctx context.Context,
+				pgId notionapi.PageID,
+				req *notionapi.PageUpdateRequest,
+			) (*notionapi.Page, error) {
+				return nil, err
+			},
+		}
+
+		MarkArticleRead(clientMock, pubId, &article)
 	})
 }
