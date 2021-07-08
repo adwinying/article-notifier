@@ -27,7 +27,7 @@ jobs:
       - name: Run
         run: go run -v ./...
         env:
-          NOTION_API_TOKEN: ${{ secret.NOTION_API_TOKEN }}
-          NOTION_DB_ID: ${{ secret.NOTION_DB_ID }}
-          NOTION_PUBLISHED_CHECKBOX_ID: ${{ secret.NOTION_PUBLISHED_CHECKBOX_ID }}
-          TEAMS_WEBHOOK_URL: ${{ secret.TEAMS_WEBHOOK_URL }}
+          NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
+          NOTION_PUBLISHED_CHECKBOX_ID: ${{ secrets.NOTION_PUBLISHED_CHECKBOX_ID }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
