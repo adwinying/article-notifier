@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -33,8 +34,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("PickRandomArticle() failed with error: %s\n", err)
 	}
+	if os.Getenv("DEBUG") == "true" {
+		json, _ := json.MarshalIndent(article, ">", "  ")
+		log.Println(string(json))
+	}
 
-	// @TODO debug
-	json, _ := json.MarshalIndent(article, "", "  ")
-	log.Println(string(json))
+	log.Println("Composing webhook message...")
+	msg := SetupMessage(article)
+
+	log.Println("Triggering webhook...")
+	teamsClient := NewTeamsClient()
+	url := GetWebhookUrl()
+	err = SendMessage(teamsClient, url, msg)
+	if err != nil {
+		log.Fatalf("SendMessage() failed with error: %s\n", err)
+	}
+
+	log.Println("Success!")
 }
