@@ -21,7 +21,7 @@ type Article struct {
 func formatArticlesResponse(res *notionapi.DatabaseQueryResponse) []Article {
 	var articles []Article
 	for _, obj := range res.Results {
-		titleWrapper := obj.Properties["Name"].(*notionapi.PageTitleProperty).Title
+		titleWrapper := obj.Properties["Name"].(*notionapi.TitleProperty).Title
 		var title string
 		if len(titleWrapper) > 0 {
 			title = titleWrapper[0].PlainText
@@ -33,8 +33,7 @@ func formatArticlesResponse(res *notionapi.DatabaseQueryResponse) []Article {
 			excerpt = excerptWrapper[0].PlainText
 		}
 
-		publishedWrapper := obj.Properties["Published"].(*notionapi.CheckboxProperty).Checkbox
-		published := publishedWrapper.(bool)
+		published := obj.Properties["Published"].(*notionapi.CheckboxProperty).Checkbox
 
 		articles = append(articles, Article{
 			ID:        obj.ID,
@@ -78,18 +77,18 @@ func FetchArticles(
 		context.Background(),
 		dbId,
 		&notionapi.DatabaseQueryRequest{
-			Filter: notionapi.CompoundFilter{
-				notionapi.FilterOperatorAND: []notionapi.Filter{
-					notionapi.PropertyFilter{
+			CompoundFilter: &notionapi.CompoundFilter{
+				notionapi.FilterOperatorAND: {
+					{
 						Property: "Published",
-						Checkbox: map[notionapi.Condition]bool{
-							notionapi.ConditionEquals: false,
+						Checkbox: &notionapi.CheckboxFilterCondition{
+							DoesNotEqual: true,
 						},
 					},
-					notionapi.PropertyFilter{
+					{
 						Property: "Ready",
-						Checkbox: map[notionapi.Condition]bool{
-							notionapi.ConditionEquals: true,
+						Checkbox: &notionapi.CheckboxFilterCondition{
+							Equals: true,
 						},
 					},
 				},

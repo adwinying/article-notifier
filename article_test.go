@@ -51,7 +51,7 @@ func TestFormatArticlesResponse(t *testing.T) {
 					ID:  "some_id",
 					URL: "some_url",
 					Properties: notionapi.Properties{
-						"Name": &notionapi.PageTitleProperty{
+						"Name": &notionapi.TitleProperty{
 							Title: []notionapi.RichText{
 								{PlainText: "some_title"},
 							},
@@ -103,17 +103,17 @@ func TestFetchArticles(t *testing.T) {
 		expectedCtx := context.Background()
 		expectedDbId := notionapi.DatabaseID("some_db_id")
 		expectedFilter := notionapi.CompoundFilter{
-			notionapi.FilterOperatorAND: []notionapi.Filter{
-				notionapi.PropertyFilter{
+			notionapi.FilterOperatorAND: {
+				{
 					Property: "Published",
-					Checkbox: map[notionapi.Condition]bool{
-						notionapi.ConditionEquals: false,
+					Checkbox: &notionapi.CheckboxFilterCondition{
+						DoesNotEqual: true,
 					},
 				},
-				notionapi.PropertyFilter{
+				{
 					Property: "Ready",
-					Checkbox: map[notionapi.Condition]bool{
-						notionapi.ConditionEquals: true,
+					Checkbox: &notionapi.CheckboxFilterCondition{
+						Equals: true,
 					},
 				},
 			},
@@ -140,8 +140,8 @@ func TestFetchArticles(t *testing.T) {
 					t.Errorf("dbId does not match expected:\n%#v\n", dbId)
 				}
 
-				if !reflect.DeepEqual(req.Filter, expectedFilter) {
-					t.Errorf("filter does not match expected:\n%#v\n", req.Filter)
+				if !reflect.DeepEqual(*req.CompoundFilter, expectedFilter) {
+					t.Errorf("filter does not match expected:\n%#v\n", *req.CompoundFilter)
 				}
 
 				if !reflect.DeepEqual(req.Sorts, expectedSort) {
